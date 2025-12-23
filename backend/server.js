@@ -1,38 +1,47 @@
-const express = require('express');
-const mongoose = require('mongoose');
-const cors = require('cors');
-require('dotenv').config();  // Add this line
+const express = require("express");
+const mongoose = require("mongoose");
+const cors = require("cors");
+require("dotenv").config();
 
 const app = express();
-app.use(cors());
+
+// Update CORS for production
+app.use(
+  cors({
+    origin: "*", // We'll update this after deploying frontend
+    credentials: true,
+  })
+);
+
 app.use(express.json());
 
 // Contact Model
-const Contact = mongoose.model('Contact', {
+const Contact = mongoose.model("Contact", {
   name: { type: String, required: true },
   email: { type: String, required: true },
   phone: { type: String, required: true },
   message: { type: String, required: true },
-  createdAt: { type: Date, default: Date.now }
+  createdAt: { type: Date, default: Date.now },
 });
 
-// Connect to MongoDB using .env variable
-mongoose.connect(process.env.MONGODB_URI)
-  .then(() => console.log('Database Connected'))
-  .catch(err => console.log('Error:', err));
+// Connect to MongoDB
+mongoose
+  .connect(process.env.MONGODB_URI)
+  .then(() => console.log("Database Connected"))
+  .catch((err) => console.log("Error:", err));
 
 // Get all contacts
-app.get('/api/contacts', async (req, res) => {
+app.get("/api/contacts", async (req, res) => {
   try {
     const contacts = await Contact.find().sort({ createdAt: -1 });
     res.json(contacts);
   } catch (error) {
-    res.status(500).json({ error: 'Server error' });
+    res.status(500).json({ error: "Server error" });
   }
 });
 
 // Create contact
-app.post('/api/contacts', async (req, res) => {
+app.post("/api/contacts", async (req, res) => {
   try {
     const contact = new Contact(req.body);
     await contact.save();
@@ -43,13 +52,18 @@ app.post('/api/contacts', async (req, res) => {
 });
 
 // Delete contact
-app.delete('/api/contacts/:id', async (req, res) => {
+app.delete("/api/contacts/:id", async (req, res) => {
   try {
     await Contact.findByIdAndDelete(req.params.id);
-    res.json({ message: 'Deleted' });
+    res.json({ message: "Deleted" });
   } catch (error) {
-    res.status(500).json({ error: 'Server error' });
+    res.status(500).json({ error: "Server error" });
   }
+});
+
+// Root route
+app.get("/", (req, res) => {
+  res.json({ message: "Contact Management API is running!" });
 });
 
 const PORT = process.env.PORT || 5000;
